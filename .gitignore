@@ -1,0 +1,12 @@
+# general python
+__pycache__/
+venv/
+.idea/
+
+# packaging
+dist/
+*.egg-info/
+build/
+
+# vim session lol
+*.vim
