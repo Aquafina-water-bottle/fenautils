@@ -111,25 +111,6 @@ def exc_set_msg(e: Exception, message: str):
     e.args = (message,)
 
 
-def test():
-    try:
-        a
-    except NameError as e:
-        import sys
-        import traceback
-
-        tb = sys.exc_info()[2]
-        print("traceback 1:")
-        print(traceback.format_exc())
-
-        print("traceback 2:")
-        traceback.print_tb(tb)
-
-        print("traceback 3:")
-        raise e
-    # raise Exception().with_traceback(tb)
-
-
 def make_dirs(file_path):
     """
     Makes the directories if the directories to the file path does not exist
