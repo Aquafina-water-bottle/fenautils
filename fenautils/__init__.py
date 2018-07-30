@@ -3,7 +3,7 @@ import re
 import errno
 import codecs
 
-SEMANTIC_VERSION = "1.0.0"
+SEMANTIC_VERSION = "1.0.1"
 
 """
 Simple assert utils to make sure that an object matches some specified type

@@ -36,7 +36,7 @@ setup(
     keywords="minecaft language fena preprocessor fenautils",
     url="https://github.com/Aquafina-water-bottle/fenautils",
     license='MIT',
-    scripts=["fenautils.py"],
+    packages=["fenautils"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         'Natural Language :: English',
