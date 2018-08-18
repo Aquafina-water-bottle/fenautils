@@ -3,7 +3,7 @@ import re
 import errno
 import codecs
 
-SEMANTIC_VERSION = "1.0.1"
+SEMANTIC_VERSION = "1.1.0"
 
 """
 Simple assert utils to make sure that an object matches some specified type
@@ -84,11 +84,6 @@ def assert_tuple_types(checked_tuple, *valid_types, **kwargs):
 Utils to change the message of an exception
 """
 
-__all__ = [
-    "exc_add_msg",
-    "exc_set_msg",
-    ]
-
 def exc_add_msg(e: Exception, message: str, sep=" "):
     """
     Args:
@@ -111,24 +106,27 @@ def exc_set_msg(e: Exception, message: str):
     e.args = (message,)
 
 
-def make_dirs(file_path):
+def make_dirs(file_path, is_dir_path=False):
     """
     Makes the directories if the directories to the file path does not exist
 
     Args:
         file_path (str): the path-like object to the file
+        is_dir_path (bool): whether the file path is actually a directory path or not
+            This will make the last basename directory instead of skipping it.
 
     Answer comes from:
         https://stackoverflow.com/a/12517490
     """
-    dir_path = os.path.realpath(os.path.dirname(file_path))
+    dir_path = os.path.realpath((file_path if is_dir_path else os.path.dirname(file_path)))
+
     if not os.path.exists(dir_path):
         try:
             os.makedirs(dir_path)
         except OSError as e: # Guard against race condition
+            # whereas errno is an error number, so this is just comparing a specific integer
             if e.errno != errno.EEXIST:
                 raise
-
 
 
 _alpha = re.compile("[A-Za-z_]")
@@ -303,4 +301,25 @@ def encode_str(string):
 
 if __name__ == "__main__":
     pass
+
+
+@addrepr
+class JsonStruct:
+    """
+    Turns any json into a mutable python object as attributes
+
+    gotten through:
+    https://stackoverflow.com/a/6993694
+    """
+    def __init__(self, json_data):
+        for name, value in json_data.items():
+            setattr(self, name, self._wrap(value))
+
+    def _wrap(self, value):
+        if isinstance(value, (list)):
+            return type(value)([self._wrap(v) for v in value])
+        return JsonStruct(value) if isinstance(value, dict) else value
+
+
+
 
