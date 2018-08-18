@@ -21,9 +21,9 @@ twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 # upload to regular pypi
 twine upload dist/*
 
-python3 -m pip install --user --index-url https://test.pypi.org/simple/ fena
-python3 -m pip install --user fena
-python3 -m pip install --user --upgrade fena
+python3 -m pip install --user --index-url https://test.pypi.org/simple/ fenautils
+python3 -m pip install --user fenautils
+python3 -m pip install --user --upgrade fenautils
 """
 
 
