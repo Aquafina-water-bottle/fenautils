@@ -313,7 +313,11 @@ class JsonStruct:
     """
     def __init__(self, json_data):
         for name, value in json_data.items():
-            setattr(self, name, self._wrap(value))
+            json_value = self._wrap(value)
+            if isinstance(json_value, str) and json_value.startswith("$(") and json_value.endswith(")"):
+                setattr(self, name, eval(json_value[2:-1]))
+            else:
+                setattr(self, name, json_value)
 
     def _wrap(self, value):
         if isinstance(value, list):

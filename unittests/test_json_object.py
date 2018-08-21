@@ -30,6 +30,33 @@ some_fantastic_json = """
 }
 """
 
+result_json = """
+{
+  "glossary": {
+    "title": "example glossary",
+    "GlossDiv": {
+      "title": "S",
+      "GlossList": {
+        "GlossEntry": {
+          "ID": "SGML"
+        }
+      }
+    }
+  },
+  "some_list": [
+    {
+      "idk": "changed var"
+    },
+    [
+      "nested_list",
+      "a",
+      "b",
+      "c"
+    ]
+  ]
+}
+"""
+
 class TestJsonObjectUtils(unittest.TestCase):
     def test_json_object(self):
         x = JsonStruct({"x": 1})
@@ -45,7 +72,7 @@ class TestJsonObjectUtils(unittest.TestCase):
         y.some_list[0].idk = "changed var"
         self.assertEqual(y.some_list[0].idk, "changed var")
 
-        print(y.to_json())
-        print(json.dumps(y.to_json(), indent=2))
+        # print(y.to_json())
+        self.assertEqual(json.dumps(y.to_json(), indent=2), result_json.strip())
 
 
