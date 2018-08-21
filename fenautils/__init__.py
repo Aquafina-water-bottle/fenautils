@@ -316,9 +316,20 @@ class JsonStruct:
             setattr(self, name, self._wrap(value))
 
     def _wrap(self, value):
-        if isinstance(value, (list)):
-            return type(value)([self._wrap(v) for v in value])
+        if isinstance(value, list):
+            return [self._wrap(v) for v in value]
         return JsonStruct(value) if isinstance(value, dict) else value
+
+    def to_json(self):
+        json_dict = {}
+        for key, value in vars(self).items():
+            json_dict[key] = self._wrap_json(value)
+        return json_dict
+
+    def _wrap_json(self, value):
+        if isinstance(value, (list)):
+            return [self._wrap_json(x) for x in value]
+        return value.to_json() if isinstance(value, JsonStruct) else value
 
 
 

@@ -45,4 +45,7 @@ class TestJsonObjectUtils(unittest.TestCase):
         y.some_list[0].idk = "changed var"
         self.assertEqual(y.some_list[0].idk, "changed var")
 
+        print(y.to_json())
+        print(json.dumps(y.to_json(), indent=2))
+
 
