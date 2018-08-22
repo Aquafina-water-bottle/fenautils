@@ -75,4 +75,7 @@ class TestJsonObjectUtils(unittest.TestCase):
         # print(y.to_json())
         self.assertEqual(json.dumps(y.to_json(), indent=2), result_json.strip())
 
+        z = JsonStruct({"asdf": "$([x**2 for x in range(4)])"})
+        self.assertEqual(repr(z), "JsonStruct[asdf=[0, 1, 4, 9]]")
+
 
