@@ -1,6 +1,6 @@
 from setuptools import setup
 
-from fenautils import SEMANTIC_VERSION
+from fenautils import _SEMANTIC_VERSION
 
 """
 Resourses:
@@ -29,7 +29,7 @@ python3 -m pip install --user --upgrade fenautils
 
 setup(
     name="fenautils",
-    version=SEMANTIC_VERSION,
+    version=_SEMANTIC_VERSION,
     author="Austin Siew",
     author_email="glowing.locker@gmail.com",
     description=("Python utilities used alongside of the Fena preprocessor"),

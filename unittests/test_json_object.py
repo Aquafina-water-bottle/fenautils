@@ -1,9 +1,9 @@
 import json
 import unittest
 
-from fenautils import JsonStruct
+from fenautils import JsonStruct, to_json, pop, items, values, keys
 
-some_fantastic_json = """
+nested_json = """
 {
   "glossary": {
     "title": "example glossary",
@@ -15,67 +15,132 @@ some_fantastic_json = """
         }
       }
     }
-  },
-  "some_list": [
+  }
+}
+"""
+
+nested_json_final = """
+{
+  "glossary": {
+    "title": "memes",
+    "GlossDiv": {
+      "GlossList": {
+        "GlossEntry": {
+          "TEST1": "TEST1",
+          "TEST2": "TEST2"
+        }
+      }
+    }
+  }
+}
+"""
+
+
+nested_list_json = """
+{
+  "outer_list": [
     {
-      "idk": 5
+      "attr": 5
     },
     [
-      "nested_list",
+      "this",
+      "is",
       "a",
-      "b",
-      "c"
+      "nested",
+      "list"
     ]
   ]
 }
 """
 
-result_json = """
-{
-  "glossary": {
-    "title": "example glossary",
-    "GlossDiv": {
-      "title": "S",
-      "GlossList": {
-        "GlossEntry": {
-          "ID": "SGML"
-        }
-      }
-    }
-  },
-  "some_list": [
-    {
-      "idk": "changed var"
-    },
-    [
-      "nested_list",
-      "a",
-      "b",
-      "c"
-    ]
-  ]
-}
-"""
+def hello(string):
+    """
+    djb2 hash algorithm lol
+    """
+    hash_int = 5381
+
+    for char in string:
+        char = ord(char)
+        hash_int = ((hash_int << 5) + hash_int) + char
+
+    return hash_int % ((1<<31)-1)
+
 
 class TestJsonObjectUtils(unittest.TestCase):
     def test_json_object(self):
-        x = JsonStruct({"x": 1})
-        self.assertEqual(repr(x), "JsonStruct[x=1]")
+        a = JsonStruct({"x": 1})
+        self.assertEqual(repr(a), "JsonStruct[x=1]")
 
-        y = JsonStruct(json.loads(some_fantastic_json))
-        self.assertEqual(repr(y), "JsonStruct[glossary=JsonStruct[title='example glossary', GlossDiv=JsonStruct[title='S', GlossList=JsonStruct[GlossEntry=JsonStruct[ID='SGML']]]], some_list=[JsonStruct[idk=5], ['nested_list', 'a', 'b', 'c']]]")
+        b = JsonStruct(json.loads(nested_json))
+        self.assertEqual(repr(b),
+            "JsonStruct[glossary=JsonStruct[title='example glossary', GlossDiv=JsonStruct[title='S', GlossList=JsonStruct[GlossEntry=JsonStruct[ID='SGML']]]]]")
 
-        # pylint: disable=no-member
-        self.assertEqual(y.glossary.GlossDiv.GlossList.GlossEntry.ID, "SGML")
-        self.assertEqual(y.some_list[0].idk, 5)
+        self.assertTrue(hasattr(b.glossary.GlossDiv.GlossList.GlossEntry, "ID"))
 
-        y.some_list[0].idk = "changed var"
-        self.assertEqual(y.some_list[0].idk, "changed var")
+        # checks getting attributes using the index method or the regular attribute method
+        self.assertEqual(b.glossary.GlossDiv.GlossList.GlossEntry.ID, "SGML")
+        self.assertEqual(b["glossary"].GlossDiv["GlossList"].GlossEntry["ID"], "SGML")
+        self.assertEqual(b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["ID"], "SGML")
 
-        # print(y.to_json())
-        self.assertEqual(json.dumps(y.to_json(), indent=2), result_json.strip())
+        # sets the attribute using regular attributes
+        b.glossary.title = "a title"
+        self.assertEqual(b["glossary"]["title"], "a title")
 
-        z = JsonStruct({"asdf": "$([x**2 for x in range(4)])"})
-        self.assertEqual(repr(z), "JsonStruct[asdf=[0, 1, 4, 9]]")
+        # sets the attribute using dictionary indexing
+        b["glossary"]["title"] = "memes"
+        self.assertEqual(b.glossary.title, "memes")
+
+        # sets new attributes using regular attributes
+        b.glossary.GlossDiv.GlossList.GlossEntry.TEST1 = "TEST1"
+        self.assertEqual(b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["TEST1"], "TEST1")
+
+        # sets new attributes using dictionary indexing
+        b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"]["TEST2"] = "TEST2"
+        self.assertEqual(b.glossary.GlossDiv.GlossList.GlossEntry.TEST2, "TEST2")
+
+        self.assertEqual(repr(b),
+            "JsonStruct[glossary=JsonStruct[title='memes', GlossDiv=JsonStruct[title='S', GlossList=JsonStruct[GlossEntry=JsonStruct[ID='SGML', TEST1='TEST1', TEST2='TEST2']]]]]")
+
+        # displays the keys and values of the json struct
+        self.assertListEqual(list(keys(b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"])), ["ID", "TEST1", "TEST2"])
+        self.assertListEqual(list(values(b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"])), ["SGML", "TEST1", "TEST2"])
+        self.assertListEqual(
+            list(items(b["glossary"]["GlossDiv"]["GlossList"]["GlossEntry"])),
+            [("ID", "SGML"), ("TEST1", "TEST1"), ("TEST2", "TEST2")]
+            )
+
+
+        # removes values
+        self.assertEqual(pop(b["glossary"].GlossDiv["GlossList"].GlossEntry, "ID"), "SGML")
+        self.assertEqual(pop(b.glossary["GlossDiv"], "title"), "S")
+
+        self.assertEqual(repr(b),
+            "JsonStruct[glossary=JsonStruct[title='memes', GlossDiv=JsonStruct[GlossList=JsonStruct[GlossEntry=JsonStruct[TEST1='TEST1', TEST2='TEST2']]]]]")
+
+        # checks for valid json
+        b_json_str = json.dumps(to_json(b), indent=2)
+        self.assertEqual(b_json_str, nested_json_final.strip())
+
+
+        c = JsonStruct(json.loads(nested_list_json))
+        self.assertEqual(repr(c), "JsonStruct[outer_list=[JsonStruct[attr=5], ['this', 'is', 'a', 'nested', 'list']]]")
+
+
+        c_json_str = json.dumps(to_json(c), indent=2)
+        self.assertEqual(c_json_str, nested_list_json.strip())
+
+
+        d = JsonStruct({
+            # uses list comprehension to see if python code executes properly
+            "list_comp": "$([x**2 for x in range(4)])",
+
+            # uses function `hello` defined in this file to see if globals work
+            "using_func": "$(hello('there'))"
+        }, globals=globals())
+
+        self.assertEqual(repr(d), "JsonStruct[list_comp=[0, 1, 4, 9], using_func=275570463]")
+
+
+
 
 

@@ -1,9 +1,10 @@
 import os
 import re
+import json
 import errno
 import codecs
 
-SEMANTIC_VERSION = "1.1.0"
+_SEMANTIC_VERSION = "2.0.0"
 
 """
 Simple assert utils to make sure that an object matches some specified type
@@ -303,36 +304,119 @@ if __name__ == "__main__":
     pass
 
 
-@addrepr
 class JsonStruct:
     """
-    Turns any json into a mutable python object as attributes
+    Stores all custom variables under an internal _dict attribute
 
-    gotten through:
-    https://stackoverflow.com/a/6993694
+    These attributes can be accessed through indexing like a dictionary or calling them as attributes.
     """
-    def __init__(self, json_data):
-        for name, value in json_data.items():
-            json_value = self._wrap(value)
-            if isinstance(json_value, str) and json_value.startswith("$(") and json_value.endswith(")"):
-                json_value = eval(json_value[2:-1])  # pylint: disable=eval-used
-            setattr(self, name, json_value)
 
-    def _wrap(self, value):
-        if isinstance(value, list):
-            return [self._wrap(v) for v in value]
-        return JsonStruct(value) if isinstance(value, dict) else value
+    def __init__(self, json_data, globals=None):
+        # dict comprehension to wrap all values of the dictionary
+        self._data = {key: _wrap(value, globals=globals) for key, value in json_data.items()}
 
-    def to_json(self):
-        json_dict = {}
-        for key, value in vars(self).items():
-            json_dict[key] = self._wrap_json(value)
-        return json_dict
+    def __getattr__(self, item):
+        # prevents recursion
+        if item == "_data":
+            return self.__dict__[item]
 
-    def _wrap_json(self, value):
-        if isinstance(value, (list)):
-            return [self._wrap_json(x) for x in value]
-        return value.to_json() if isinstance(value, JsonStruct) else value
+        return self._data[item]
+
+    def __setattr__(self, key, value):
+        if key == "_data":
+            if "_data" not in self.__dict__:
+                data = {}
+                self.__dict__[key] = data
+            self.__dict__[key] = value
+        else:
+            self.__dict__["_data"][key] = value
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __contains__(self, item):
+        return item in self._data
+
+    def __repr__(self):
+        class_name = type(self).__name__
+
+        variables = []
+        for variable, value in items(self):
+            variables.append(f"{variable}={value!r}")
+        variables_str = ", ".join(variables)
+
+        return f"{class_name}[{variables_str}]"
+
+
+# All of the following methods are not methods of the JsonStruct class
+# to prevent any item collisions
+def _wrap(data, globals=None):
+    """
+    Recursive function to visit all inside a list and dictionary
+    """
+    if isinstance(data, list):
+        # visits all items in the list
+        return [_wrap(value, globals=globals) for value in data]
+
+    if isinstance(data, dict):
+        return JsonStruct(data, globals=globals)
+
+    if isinstance(data, str) and data.startswith("$(") and data.endswith(")"):
+        # pylint: disable=eval-used
+        return eval(data[2:-1], globals)
+
+    return data
+
+
+def to_json(json_struct):
+    json_dict = {}
+    for key, value in items(json_struct):
+        json_dict[key] = _wrap_json(value)
+
+    return json_dict
+
+def _wrap_json(data):
+    if isinstance(data, (list)):
+        return [_wrap_json(value) for value in data]
+
+    if isinstance(data, JsonStruct):
+        return to_json(data)
+
+    return data
+
+
+def items(json_struct):
+    """
+    Gets all items of the json_struct
+    """
+    return json_struct._data.items()
+
+def keys(json_struct):
+    """
+    Gets all the variable names of the json_struct
+    """
+    return json_struct._data.keys()
+
+def values(json_struct):
+    """
+    Gets all values of all variables of the json struct
+    """
+    return json_struct._data.values()
+
+def pop(json_struct, item):
+    """
+    Removes the item
+    """
+    return json_struct._data.pop(item)
 
 
 
